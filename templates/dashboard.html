@@ -1,1 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h1 class="fw-bold text-dark">
+            Welcome {{ current_user.username }}
+        </h1>
+
+        <a href="/logout"
+           class="btn btn-outline-danger">
+            Logout
+        </a>
+
+    </div>
+
+    <div class="row mb-5">
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-0 p-4 text-center">
+
+                <h5>Total Tasks</h5>
+
+                <h2 id="totalTasks">0</h2>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-0 p-4 text-center">
+
+                <h5>Completed</h5>
+
+                <h2 id="completedTasks">0</h2>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-0 p-4 text-center">
+
+                <h5>Pending</h5>
+
+                <h2 id="pendingTasks">0</h2>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-0 p-4 text-center">
+
+                <h5>Completion %</h5>
+
+                <h2 id="completionRate">0%</h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm border-0 p-4 mb-5">
+
+        <h3 class="mb-4 text-center">
+            Task Analytics
+        </h3>
+
+        <div style="width: 250px; height: 250px; margin: auto;">
+            <canvas id="taskChart"></canvas>
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm border-0 p-4 mb-5">
+
+        <form method="GET"
+              action="/dashboard"
+              class="row g-3 mb-4">
+
+            <div class="col-md-5">
+
+                <input type="text"
+                       name="search"
+                       class="form-control"
+                       placeholder="Search tasks">
+
+            </div>
+
+            <div class="col-md-4">
+
+                <select name="priority"
+                        class="form-select">
+
+                    <option value="">
+                        All Priorities
+                    </option>
+
+                    <option value="High">
+                        High
+                    </option>
+
+                    <option value="Medium">
+                        Medium
+                    </option>
+
+                    <option value="Low">
+                        Low
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-3">
+
+                <button type="submit"
+                        class="btn btn-dark w-100">
+
+                    Filter Tasks
+
+                </button>
+
+            </div>
+
+        </form>
+
+        <h2 class="mb-4">
+            Add Task
+        </h2>
+
+        <form id="taskForm">
+
+            <div class="mb-3">
+
+                <input type="text"
+                       id="title"
+                       name="title"
+                       class="form-control"
+                       placeholder="Task Title"
+                       required>
+
+            </div>
+
+            <div class="mb-3">
+
+                <textarea id="description"
+                          name="description"
+                          class="form-control"
+                          placeholder="Task Description"
+                          required></textarea>
+
+            </div>
+
+            <div class="mb-3">
+
+                <select id="priority"
+                        name="priority"
+                        class="form-select">
+
+                    <option value="High">
+                        High
+                    </option>
+
+                    <option value="Medium">
+                        Medium
+                    </option>
+
+                    <option value="Low">
+                        Low
+                    </option>
+
+                </select>
+
+            </div>
+
+            <button type="submit"
+                    class="btn btn-success">
+
+                Add Task
+
+            </button>
+
+        </form>
+
+    </div>
+
+    <h2 class="mb-4 text-dark">
+        Your Tasks
+    </h2>
+
+    {% for task in tasks %}
+
+        <div class="card shadow-sm border-0 p-4 mb-4">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <h3 class="text-dark">
+                    {{ task.title }}
+                </h3>
+
+                {% if task.status == 'Completed' %}
+
+                    <span class="badge bg-success fs-6">
+                        Completed
+                    </span>
+
+                {% else %}
+
+                    <span class="badge bg-warning text-dark fs-6">
+                        Pending
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+            <p class="text-muted mt-2">
+                {{ task.description }}
+            </p>
+
+            <p>
+                <strong>Priority:</strong>
+                {{ task.priority }}
+            </p>
+
+            <p>
+                <strong>Created:</strong>
+                {{ task.created_date }}
+            </p>
+
+            <div class="d-flex gap-3 mt-3">
+
+                <a href="/update-task/{{ task.id }}"
+                   class="btn btn-primary">
+
+                    Mark Completed
+
+                </a>
+
+                <a href="/delete-task/{{ task.id }}"
+                   class="btn btn-danger">
+
+                    Delete
+
+                </a>
+
+            </div>
+
+        </div>
+
+    {% endfor %}
+
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+
+    const socket = io();
+
+    socket.on('task_update', function(data) {
+
+        location.reload();
+
+    });
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+async function loadAnalytics() {
+
+    const response = await fetch('/analytics');
+
+    const data = await response.json();
+
+    document.getElementById('totalTasks').innerText =
+        data.total_tasks;
+
+    document.getElementById('completedTasks').innerText =
+        data.completed_tasks;
+
+    document.getElementById('pendingTasks').innerText =
+        data.pending_tasks;
+
+    document.getElementById('completionRate').innerText =
+        data.completion_rate + '%';
+
+    const ctx = document.getElementById('taskChart');
+
+    new Chart(ctx, {
+
+        type: 'doughnut',
+
+        data: {
+
+            labels: [
+                'Completed',
+                'Pending'
+            ],
+
+            datasets: [{
+
+                data: [
+                    data.completed_tasks,
+                    data.pending_tasks
+                ]
+
+            }]
+
+        }
+
+    });
+
+}
+
+loadAnalytics();
+
+</script>
+
+<script>
+
+document.getElementById('taskForm')
+.addEventListener('submit', async function(e) {
+
+    e.preventDefault();
+
+    const taskData = {
+
+        title: document.getElementById('title').value,
+
+        description: document.getElementById('description').value,
+
+        priority: document.getElementById('priority').value
+
+    };
+
+    const response = await fetch('/api/tasks', {
+
+        method: 'POST',
+
+        headers: {
+            'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify(taskData)
+
+    });
+
+    const result = await response.json();
+
+    alert(result.message);
+
+    location.reload();
+
+});
+
+</script>
+
+</body>
+
+</html>
